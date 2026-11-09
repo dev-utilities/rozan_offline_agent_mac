@@ -1,9 +1,9 @@
 /* Rozan web UI.
  * Narrow (< 720px): the modal next to the bubble. Wide: the full app window with a sidebar. */
 :root {
-  --bg: #faf8f5; --surface: #ffffff; --surface-2: #f4f0eb; --surface-3: #ece6df; --border: #e9e3dc;
+  --bg: #f6f8fb; --surface: #ffffff; --surface-2: #eef2f7; --surface-3: #e4eaf2; --border: #e2e8f0;
   --text: #17171c; --muted: #6b6b78; --faint: #9a9aa6;
-  --accent: #c8642e; --accent-2: #e9a25b; --accent-text: #ffffff; --accent-soft: #fdf0e6;
+  --accent: #1f6fd1; --accent-2: #18b4dc; --accent-text: #ffffff; --accent-soft: #e8f2fd;
   --danger: #e5484d; --warn: #c27c0e; --ok: #22a06b;
   --untrusted-bg: #fffaf0; --untrusted-border: #f3d9a4; --untrusted-text: #7a5300;
   --quarantine: #7c5cd6;
@@ -14,9 +14,9 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131318; --surface: #1c1c23; --surface-2: #26262f; --surface-3: #30303b; --border: #2e2e38;
+    --bg: #0b1220; --surface: #121a2b; --surface-2: #1a2438; --surface-3: #223049; --border: #243149;
     --text: #ececf1; --muted: #a0a0ad; --faint: #6f6f7c;
-    --accent: #d9773f; --accent-2: #eba765; --accent-soft: #3a2a20;
+    --accent: #3d93f5; --accent-2: #2fd0f0; --accent-soft: #12284a;
     --danger: #ff6369; --warn: #f0b440; --ok: #3dd68c;
     --untrusted-bg: #2a2416; --untrusted-border: #5c4a22; --untrusted-text: #f1d48f;
     --quarantine: #b39dff;
@@ -424,3 +424,8 @@ h3 { margin: 16px 0 6px; font-size: 11px; text-transform: uppercase; letter-spac
 .plan-mini summary { max-width: 100%; }
 .plan-mini summary > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .plan-mini summary > .muted { white-space: nowrap; flex: 0 0 auto; }
+/* brand marks follow the theme like the bubble: light = pale blue tile, dark = navy glow */
+.brand-mark, .avatar, .empty-mark { background: radial-gradient(circle at 50% 45%, #ffffff 0%, #e6f0fc 60%, #d3e5f8 100%); color: #1c4e96; box-shadow: inset 0 0 0 1px rgba(28,78,150,.18); }
+@media (prefers-color-scheme: dark) {
+  .brand-mark, .avatar, .empty-mark { background: radial-gradient(circle at 50% 45%, #1d4f8f 0%, #0a1c3a 70%, #06122a 100%); color: #b8f2ff; box-shadow: none; }
+}

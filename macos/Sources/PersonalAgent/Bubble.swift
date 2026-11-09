@@ -23,6 +23,7 @@ final class BubbleView: NSView {
     var onDragStart: (() -> Void)?
 
     private let circle = CAGradientLayer()
+    private let art = CALayer()          // the Rozan icon, light or dark to match macOS
     private let ring = CAShapeLayer()
     private let glyph = NSImageView()
     private let badge = NSTextField(labelWithString: "!")
@@ -44,6 +45,11 @@ final class BubbleView: NSView {
         circle.shadowRadius = 4
         circle.shadowOffset = CGSize(width: 0, height: -1)
         layer?.addSublayer(circle)
+        art.frame = circle.bounds
+        art.cornerRadius = d / 2
+        art.masksToBounds = true
+        art.contentsGravity = .resizeAspectFill
+        circle.addSublayer(art)
 
         ring.path = CGPath(ellipseIn: circle.frame.insetBy(dx: -2, dy: -2), transform: nil)
         ring.fillColor = nil
@@ -93,11 +99,15 @@ final class BubbleView: NSView {
     }
 
     private func applyState() {
-        // Warm amber → terracotta (Rozan's colours); grey while on standby or starting; red while listening.
+        // The icon art follows the system theme (dark: navy glow, light: pale blue); red with a mic while listening.
+        let darkMode = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let artURL = Bundle.main.url(forResource: darkMode ? "bubble-dark" : "bubble-light", withExtension: "png")
+        art.contents = listening ? nil : artURL.flatMap { NSImage(contentsOf: $0) }
+        art.isHidden = listening || art.contents == nil
+        glyph.isHidden = !listening && art.contents != nil
         let colors: [NSColor] = listening ? [NSColor(srgbRed: 0.94, green: 0.27, blue: 0.27, alpha: 1),
                                              NSColor(srgbRed: 0.86, green: 0.15, blue: 0.47, alpha: 1)]
-            : (state == .paused || state == .offline) ? [NSColor(white: 0.55, alpha: 1), NSColor(white: 0.42, alpha: 1)]
-            : [NSColor(srgbRed: 0.95, green: 0.66, blue: 0.42, alpha: 1), NSColor(srgbRed: 0.78, green: 0.44, blue: 0.27, alpha: 1)]
+            : [NSColor(srgbRed: 0.10, green: 0.26, blue: 0.48, alpha: 1), NSColor(srgbRed: 0.03, green: 0.09, blue: 0.20, alpha: 1)]
         circle.colors = colors.map(\.cgColor)
         circle.borderWidth = 0
         effectiveAppearance.performAsCurrentDrawingAppearance {

@@ -299,6 +299,9 @@ class AgentService:
         self.audit_path = Path(audit_path)
         self.fake = fake
         self.permission_needed: Optional[str] = None
+        self.standby_info: Optional[dict] = None           # what the watchdog saw when it put Rozan on standby
+        from .memory import top_apps as _top_apps
+        self.top_apps_reader = _top_apps
         self.browser_ready: Callable[[], bool] = lambda: True    # the real service checks the Chrome bridge
         self.approval_timeout_s = approval_timeout_s
         self.model_names = {"planner": planner_model, "reader": reader_model}
@@ -472,7 +475,17 @@ class AgentService:
         elif snap["swap_free_gb"] < min_swap:
             reason = f"No room left to swap ({snap['swap_free_gb']:.1f} GB of disk free for it)"
         if reason:
-            self.pause(f"Auto-standby: {reason}. Close some apps, then press Resume.")
+            # Snapshot the biggest apps now, before standby unloads the model, so the owner sees what caused it
+            # (including Rozan itself).
+            try:
+                apps = self.top_apps_reader()
+            except Exception:
+                apps = []
+            listed = ", ".join(f"{a['name']} {a['memory_gb']:.1f} GB" for a in apps)
+            self.standby_info = {"ts": time.time(), "reason": reason, "used_percent": snap.get("used_percent"),
+                                 "apps": apps}
+            self.pause(f"Auto-standby: {reason}." + (f" Using the most memory: {listed}." if listed else "")
+                       + " Close some apps, then press Resume.")
         return reason
 
     # ---- conversations --------------------------------------------------------------------------
@@ -954,7 +967,7 @@ class AgentService:
             "ok": True, "version": VERSION, "pid": os.getpid(), "started": self.started, "fake": self.fake,
             "models": self._model_view(), "run": run.summary() if run else None,
             "conversations": len(self.conversations), "ui_clients": len(self._subscribers), **self.state_view(),
-            "permission_needed": self.permission_needed,
+            "permission_needed": self.permission_needed, "standby_info": self.standby_info,
             "chrome_extension": {"connected": get_bridge().connected(), "version": get_bridge().extension_version,
                                  "browsers": get_bridge().browsers()},
         }

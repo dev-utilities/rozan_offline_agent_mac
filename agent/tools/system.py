@@ -67,17 +67,8 @@ def register(reg: Registry, policy) -> None:
         return {"percent": int(pct), "status": status, "summary": f"Battery {pct}%, {status}, {source}. {rest}".strip()}
 
     def system_top_apps(limit: int = 8):
-        out = subprocess.run(["ps", "-axo", "rss=,comm="], capture_output=True, text=True, timeout=10).stdout
-        totals: dict[str, float] = {}
-        for line in out.splitlines():
-            parts = line.strip().split(None, 1)
-            if len(parts) != 2 or not parts[0].isdigit():
-                continue
-            name = os.path.basename(parts[1]).split(" Helper")[0][:40]
-            totals[name] = totals.get(name, 0) + int(parts[0]) / 2**20
-        top = sorted(totals.items(), key=lambda x: -x[1])[: max(1, min(int(limit), 20))]
-        return {"apps": [{"name": n, "memory_gb": round(g, 2)} for n, g in top],
-                "summary": "Using the most memory: " + ", ".join(f"{n} {_gb(g)}" for n, g in top) + "."}
+        top = mem.top_apps(max(1, min(int(limit), 20)))
+        return {"apps": top, "summary": "Using the most memory: " + ", ".join(f"{a['name']} {_gb(a['memory_gb'])}" for a in top) + "."}
 
     def system_keyboards():
         on = _keyboards("list")

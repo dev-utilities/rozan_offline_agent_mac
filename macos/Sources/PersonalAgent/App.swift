@@ -57,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .separator(),
             item("Open Full App", #selector(menuFullApp), "o", target: self),
             item("New Chat", #selector(menuNewChat), "n", target: self),
+            item("Setup & Requirements…", #selector(menuSetup), "", target: self),
             .separator(),
             item("Hide Rozan", #selector(NSApplication.hide(_:)), "h"),
             item("Quit Rozan", #selector(menuQuit), "q", target: self),
@@ -76,10 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ note: Notification) {
         makeMainMenu()
-        let root = Bundle.main.object(forInfoDictionaryKey: "PAProjectRoot") as? String
-            ?? ProcessInfo.processInfo.environment["PA_PROJECT_ROOT"]
-            ?? FileManager.default.currentDirectoryPath
-        core = Core(projectRoot: URL(fileURLWithPath: root))
+        core = Core(projectRoot: Paths.root)
         core.onReady = { [weak self] s in self?.coreReady(s) }
         core.onDown = { [weak self] msg in self?.coreDown(msg) }
         windows.onModalShown = { [weak self] in
@@ -113,8 +111,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dnc.addObserver(self, selector: #selector(remoteToggle), name: .init("com.personal-agent.toggle"), object: nil)
         dnc.addObserver(self, selector: #selector(remoteFullApp), name: .init("com.personal-agent.fullapp"), object: nil)
         dnc.addObserver(self, selector: #selector(remoteDictate), name: .init("com.personal-agent.dictate"), object: nil)
-        core.start()
+        // First launch (or something went missing): the Setup window checks and installs what Rozan needs.
+        Task {
+            if await setup.requirementsMet() { core.start() } else { showSetup() }
+        }
     }
+
+    private let setup = SetupWindow()
+    private var coreStarted = false
+    private func showSetup() {
+        setup.show { [weak self] in
+            guard let self else { return }
+            if self.core.session == nil { self.core.start() }
+        }
+    }
+    @objc private func menuSetup() { showSetup() }
 
     func applicationWillTerminate(_ note: Notification) {
         pollTask?.cancel()
@@ -149,6 +160,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         paused = status["paused"] as? Bool ?? false
         watcherOn = status["watcher"] as? Bool ?? false
         setState(state, pending: status["pending_approvals"] as? Int ?? 0)
+        // Auto-standby: say why once, with the apps that were using the most memory at that moment.
+        if paused, let info = status["standby_info"] as? [String: Any], let ts = info["ts"] as? Double, ts > shownStandbyTs {
+            shownStandbyTs = ts
+            DispatchQueue.main.async { [weak self] in self?.explainStandby(info) }
+        }
         // Permissions are asked for lazily: the first time a desktop step needed Accessibility.
         if status["permission_needed"] as? String == "accessibility" && !askedAccessibility && !AXIsProcessTrusted() {
             askedAccessibility = true
@@ -157,6 +173,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     private var askedAccessibility = false
+    private var shownStandbyTs: Double = Date().timeIntervalSince1970 - 5   // not for a standby from before launch
+
+    private func explainStandby(_ info: [String: Any]) {
+        let apps = (info["apps"] as? [[String: Any]]) ?? []
+        let lines = apps.map { a in
+            String(format: "•  %@ — %.1f GB", (a["name"] as? String) ?? "?", (a["memory_gb"] as? Double) ?? 0)
+        }
+        let a = NSAlert()
+        a.icon = NSApp.applicationIconImage
+        let pct = (info["used_percent"] as? Double).map { String(format: " (memory %.0f%% used)", $0) } ?? ""
+        a.messageText = "Rozan went on standby\(pct)"
+        a.informativeText = "\((info["reason"] as? String) ?? "Memory is nearly full").\n\n"
+            + (lines.isEmpty ? "" : "Using the most memory just before standby:\n" + lines.joined(separator: "\n") + "\n\n")
+            + "Quit an app you don't need, then resume. Nothing is planned or run until you do."
+        a.addButton(withTitle: "Resume")
+        a.addButton(withTitle: "Stay on Standby")
+        a.addButton(withTitle: "Open Activity Monitor")
+        NSApp.activate()
+        switch a.runModal() {
+        case .alertFirstButtonReturn: Task { _ = await core.request("POST", "/resume"); await poll() }
+        case .alertThirdButtonReturn: NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
+        default: break
+        }
+    }
 
     private func setState(_ state: AgentState, pending: Int) {
         bubble.state = state

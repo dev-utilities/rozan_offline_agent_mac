@@ -1,7 +1,7 @@
 /* Icons from Lucide (https://lucide.dev), v0.460.0, ISC License.
  * Copyright (c) Lucide Contributors 2022; portions Feather (MIT), Cole Bemis 2013-2022. */
 window.ICONS = {
- "rozan": "<path d=\"M4.5 21.5V10a7.5 7.5 0 0 1 15 0v11.5z\" /> <rect x=\"10\" y=\"6.5\" width=\"4\" height=\"6\" rx=\"0.6\" /> <path d=\"M10.6 12.5 8 21.5\" /> <path d=\"M12 12.5v9\" /> <path d=\"M13.4 12.5 16 21.5\" />",
+ "rozan": "<rect x=\"5\" y=\"5\" width=\"14\" height=\"14\" rx=\"3\" /> <path d=\"M12 8.6l.9 2.5 2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9z\" fill=\"currentColor\" stroke-width=\"1\" /> <path d=\"M12 1.8v1.7M12 20.5v1.7M3.4 3.4l1.3 1.3M20.6 3.4l-1.3 1.3M3.4 20.6l1.3-1.3M20.6 20.6l-1.3-1.3\" />",
  "arrow-up": "<path d=\"m5 12 7-7 7 7\" /> <path d=\"M12 19V5\" />",
  "audio-lines": "<path d=\"M2 10v3\" /> <path d=\"M6 6v11\" /> <path d=\"M10 3v18\" /> <path d=\"M14 8v7\" /> <path d=\"M18 5v13\" /> <path d=\"M22 10v3\" />",
  "bot-message-square": "<path d=\"M12 6V2H8\" /> <path d=\"m8 18-4 4V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z\" /> <path d=\"M2 12h2\" /> <path d=\"M9 11v2\" /> <path d=\"M15 11v2\" /> <path d=\"M20 12h2\" />",

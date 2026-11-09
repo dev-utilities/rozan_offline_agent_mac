@@ -531,3 +531,15 @@ def test_fixed_success_text_is_replaced_by_the_tools_own_summary(policy, tmp_pat
         {"id": "s", "tool": "show", "args": {"text": "All done, memory is great!"}}]})
     service._show_real_results(plan)
     assert plan.steps[1].args["text"] == {"$ref": "m.summary"}
+
+
+def test_auto_standby_snapshots_the_biggest_apps_first(policy, tmp_path):
+    client, service = make_client(policy, tmp_path, [], [])
+    service.memory_reader = lambda: {"used_percent": 95.0, "swap_free_gb": 30.0, "pressure": 1}
+    service.top_apps_reader = lambda: [{"name": "Google Chrome", "memory_gb": 6.2},
+                                       {"name": "Ollama (Rozan's AI model)", "memory_gb": 3.4}]
+    with client:
+        assert service.check_memory() and service.paused
+        st = client.get("/status", headers=H).json()
+    assert st["standby_info"]["apps"][0]["name"] == "Google Chrome"
+    assert "Google Chrome 6.2 GB" in service.standby_reason and "Rozan's AI model" in service.standby_reason

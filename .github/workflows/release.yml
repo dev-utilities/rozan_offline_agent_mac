@@ -1,0 +1,29 @@
+# Builds Rozan.dmg on an Apple-silicon runner and attaches it to the GitHub Release for a version tag.
+#   git tag v0.1.0 && git push origin v0.1.0
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  dmg:
+    runs-on: macos-15          # Apple silicon
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Rozan.dmg (ad-hoc signed)
+        env:
+          PA_SIGN_IDENTITY: ""   # no Developer ID: ad-hoc signature
+        run: scripts/make_dmg.sh
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Rozan $GITHUB_REF_NAME" --notes-file .github/RELEASE_NOTES.md
+          gh release upload "$GITHUB_REF_NAME" dist/*.dmg --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rozan-dmg
+          path: dist/*.dmg

@@ -74,8 +74,21 @@ desktop guard rails, Playwright UI). Requirement status per item: `REQUIREMENTS.
   wttr.in in the owner's Chrome → answer; keyboard tool end to end (on an already-enabled layout); desktop.controls
   on Finder.
 - **Browser**: Rozan Bridge extension (`extension/`), any Chromium browser, per-instance ids.
+- **Icons (owner-approved 2026-11-09)**: `scripts/make_icon.swift` draws them from shapes. Variant D (light) for the
+  Dock/Finder icon and the extension; the bubble follows the system theme (C navy in dark mode, D in light mode).
+- **Distribution**: `scripts/make_dmg.sh` → `dist/Rozan-<version>-arm64.dmg` (self-contained app: code in
+  `Contents/Resources/core`, never written to; `PYTHONDONTWRITEBYTECODE=1`). First launch shows **Rozan Setup**
+  (`Setup.swift`): Ollama (ollama.com zip), Python 3.11+ via uv (no admin), Rozan's venv in
+  `~/Library/Application Support/Rozan/venv` from `requirements.txt`, model pull, Chrome bridge (launcher in
+  Application Support, runs Rozan's own Python). Verified 2026-11-09 by running the app from the mounted read-only DMG.
+  `.github/workflows/release.yml` builds and attaches the DMG for `v*` tags (ad-hoc signed; not notarized: users
+  click Open Anyway once). Mac App Store is not an option (sandbox forbids Accessibility control, subprocesses,
+  installing other software).
+- **Standby popup**: on auto-standby the core snapshots the top 5 apps by memory (processes grouped by `.app`;
+  Rozan's core and Ollama named) into `/status.standby_info` and the banner; the app shows Resume / Stay on Standby /
+  Open Activity Monitor. Verified live 2026-11-09.
 
-Not done yet: owner-approved Urdu keyboard add (waiting in a chat); model comparison of qwen3.5:9b / gemma4:12b
+Not done yet: model comparison of qwen3.5:9b / gemma4:12b
 (the guard aborted it: ~14 GB already in swap; reboot first); connectors (section 5 C2); Touch ID unlock; daily log
 reviewer; saved-action authoring from the UI.
 

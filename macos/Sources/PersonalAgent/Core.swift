@@ -22,9 +22,9 @@ final class Core {
 
     func start() {
         stopping = false
-        let python = projectRoot.appendingPathComponent(".venv/bin/python")
+        let python = Paths.python
         guard FileManager.default.isExecutableFile(atPath: python.path) else {
-            onDown?("Python environment not found at \(python.path)")
+            onDown?("Python environment not found at \(python.path). Open Rozan → Setup & Requirements.")
             return
         }
         try? FileManager.default.removeItem(at: home.appendingPathComponent("session.json"))
@@ -32,6 +32,9 @@ final class Core {
         p.executableURL = python
         p.arguments = ["-m", "agent.server", "--port", "0"]
         p.currentDirectoryURL = projectRoot
+        var env = ProcessInfo.processInfo.environment
+        env["PYTHONDONTWRITEBYTECODE"] = "1"          // never write inside the (signed) app bundle
+        p.environment = env
         let log = home.appendingPathComponent("core.log")
         FileManager.default.createFile(atPath: log.path, contents: nil)
         if let h = try? FileHandle(forWritingTo: log) { p.standardOutput = h; p.standardError = h }

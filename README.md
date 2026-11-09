@@ -54,24 +54,25 @@ and a policy enforced in code.
 The worst case of a fully fooled reader is a *wrong verdict on the item it read*
 (`tests/test_executor.py::test_injected_email_can_only_flip_its_own_verdict`).
 
-## Requirements
+## Install
 
-- macOS 14+ on Apple silicon (built and tested on an 18 GB M3 Pro), Xcode command-line tools.
-- [Ollama](https://ollama.com) with `qwen3.5:4b` (default planner and reader, ~3.5 GB while working).
-- Python 3.11+, Google Chrome (for web tasks).
+1. Download **Rozan-…-arm64.dmg** from [Releases](https://github.com/dev-utilities/rozan_offline_agent_mac/releases).
+2. Open it and drag **Rozan** to **Applications**, then open Rozan.
+3. **Rozan Setup** opens on first launch and checks everything it needs, each with an **Install** button
+   (Details shows every command and its output):
+   - **Ollama**: runs the AI model on your Mac (downloaded from ollama.com).
+   - **Python 3.11+**: installed with [uv](https://docs.astral.sh/uv/), no admin password.
+   - **Rozan's Python packages**: a private environment in `~/Library/Application Support/Rozan`.
+   - **The AI model** (`qwen3.5:4b`, about 3.4 GB).
+   - **Chrome connection** (optional).
+   When all are green, press **Start Rozan**. Setup is always available from the menu: *Rozan → Setup & Requirements…*
+4. Ask Rozan *"install your chrome extension"* to connect your browser. It asks for Accessibility permission
+   the first time it needs to see other apps.
 
-## Setup
+The app is not notarized by Apple yet. The first time, macOS may say it can't verify the developer: open
+**System Settings → Privacy & Security** and click **Open Anyway** next to Rozan.
 
-```sh
-brew install ollama && ollama pull qwen3.5:4b
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-.venv/bin/python scripts/install_chrome_bridge.py   # lets Chrome talk to Rozan (native messaging)
-scripts/build_mac_app.sh --install                  # builds Rozan.app (+ native helpers in bin/)
-open ~/Applications/Rozan.app
-```
-
-Then ask Rozan: *"install your chrome extension"*. It loads `extension/` in Chrome by itself
-(it asks for Accessibility permission the first time it needs to see other apps).
+Requirements: an Apple silicon Mac with macOS 14 or later, and about 6 GB of free disk space.
 
 Optional Gmail over IMAP (Google Account → Security → 2-Step Verification → App passwords):
 
@@ -81,6 +82,18 @@ mkdir -p ~/.personal_agent && cat > ~/.personal_agent/secrets.json <<'J'
 J
 chmod 600 ~/.personal_agent/secrets.json
 ```
+
+## Build from source
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"   # or: uv venv && uv pip install -e ".[dev]"
+.venv/bin/python scripts/install_chrome_bridge.py
+scripts/build_mac_app.sh            # development build: runs the code in this folder
+scripts/make_dmg.sh                 # self-contained app + dist/Rozan-<version>-arm64.dmg
+```
+
+Releases: pushing a tag like `v0.1.0` makes GitHub Actions build the DMG on an Apple-silicon runner and attach it
+to the release (`.github/workflows/release.yml`).
 
 ## Use
 

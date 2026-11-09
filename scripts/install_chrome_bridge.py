@@ -27,7 +27,17 @@ BROWSERS = {
     "Vivaldi": SUPPORT / "Vivaldi",
     "Arc": SUPPORT / "Arc/User Data",
 }
-LAUNCHER = ROOT / "bridge" / "run_host.sh"
+def _launcher() -> Path:
+    """Where Chrome's launcher script goes: --launcher-dir DIR (the downloaded app uses Application Support,
+    since it must not write inside its own bundle), else bridge/ in this project."""
+    if "--launcher-dir" in sys.argv:
+        d = Path(sys.argv[sys.argv.index("--launcher-dir") + 1]).expanduser()
+        d.mkdir(parents=True, exist_ok=True)
+        return d / "run_host.sh"
+    return ROOT / "bridge" / "run_host.sh"
+
+
+LAUNCHER = _launcher()
 
 
 def main() -> int:
@@ -46,7 +56,7 @@ def main() -> int:
         return 1
     ext_id = json.loads((ROOT / "extension" / ".identity.json").read_text())["id"]
     LAUNCHER.write_text("#!/bin/sh\n# Started by Chrome for the Rozan Bridge extension.\n"
-                        f'exec /usr/bin/python3 -I "{ROOT / "bridge" / "native_host.py"}"\n')
+                        f'exec "{sys.executable}" -I "{ROOT / "bridge" / "native_host.py"}"\n')
     LAUNCHER.chmod(LAUNCHER.stat().st_mode | stat.S_IXUSR)
     manifest = json.dumps({
         "name": NAME,
