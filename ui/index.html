@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Rozan</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/icons.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar" class="sidebar" aria-label="Navigation">
+    <div class="sidebar-head">
+      <span class="brand-mark"><i data-icon="rozan" data-size="17"></i></span>
+      <span class="title">Rozan</span>
+      <span id="mode-badge-side" class="badge badge-warn hidden" title="Scripted models and fake tools">FAKE</span>
+    </div>
+    <button id="side-new" class="btn btn-primary btn-block btn-new" type="button"><i data-icon="plus"></i><span>New chat</span></button>
+    <div class="mode-row">
+      <button class="btn btn-ghost btn-small" type="button" data-new-mode="isolated" title="No saved preferences are used"><i data-icon="shield" data-size="13"></i>Isolated</button>
+      <button class="btn btn-ghost btn-small" type="button" data-new-mode="incognito" title="Not saved; deleted after inactivity"><i data-icon="eye-off" data-size="13"></i>Incognito</button>
+    </div>
+    <nav class="side-nav">
+      <button class="side-link active" data-view="chat" type="button"><i data-icon="message-square"></i>Chat</button>
+      <button class="side-link" data-view="audit" type="button"><i data-icon="scroll-text"></i>Audit log</button>
+      <button class="side-link" data-view="settings" type="button"><i data-icon="settings"></i>Settings</button>
+    </nav>
+    <h3>Chats</h3>
+    <ul id="chat-list" class="chat-list"></ul>
+    <h3>Saved actions</h3>
+    <ul id="action-list" class="action-list"></ul>
+    <div class="sidebar-foot">
+      <button id="side-pause" class="btn btn-ghost btn-block btn-standby" type="button"><i data-icon="pause"></i><span class="lbl">Standby</span></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="brand">
+        <span id="conn" class="dot" title="disconnected"></span>
+        <span class="title narrow-only">Rozan</span>
+        <span id="state-chip" class="chip chip-idle">Idle</span>
+        <span id="mode-chip" class="chip hidden"></span>
+        <span id="mode-badge" class="badge badge-warn hidden narrow-only" title="Scripted models and fake tools">FAKE</span>
+      </div>
+      <button id="btn-estop" class="btn btn-danger btn-estop hidden" type="button" title="Stop everything now and pause the agent"><i data-icon="square" data-size="12"></i>Stop</button>
+      <nav class="actions">
+        <button id="btn-back" class="btn btn-ghost btn-icon hidden" type="button" title="Back to chat" aria-label="Back to chat"><i data-icon="chevron-left"></i></button>
+        <button id="btn-new" class="btn btn-ghost btn-icon narrow-only" type="button" title="New chat" aria-label="New chat"><i data-icon="plus"></i></button>
+        <button id="btn-fullapp" class="btn btn-ghost btn-icon hidden" type="button" title="Open full app" aria-label="Open full app"><i data-icon="maximize-2"></i></button>
+        <button id="btn-settings" class="btn btn-ghost btn-icon narrow-only" type="button" title="Settings" aria-label="Settings"><i data-icon="settings"></i></button>
+        <button id="btn-more" class="btn btn-ghost btn-icon narrow-only" type="button" title="More: chats, saved actions, audit log" aria-label="More"><i data-icon="ellipsis"></i></button>
+      </nav>
+    </header>
+
+    <div id="paused-banner" class="banner hidden">
+      <span id="paused-text">On standby. Nothing is planned or run until you resume.</span>
+      <button id="btn-resume" class="btn btn-small" type="button">Resume</button>
+    </div>
+
+    <section id="view-chat" class="view">
+      <main id="stream" class="stream">
+        <div id="empty" class="empty">
+          <div class="empty-mark"><i data-icon="rozan" data-size="26"></i></div>
+          <p class="empty-title">How can I help?</p>
+          <p class="empty-hint">Everything runs on this Mac. Anything risky — shell commands, sending, clicking, deleting — waits for your OK.</p>
+          <div class="suggestions">
+            <button class="suggestion" type="button">How much memory is free?</button>
+            <button class="suggestion" type="button">Which apps use the most memory?</button>
+            <button class="suggestion" type="button">How do I type in Urdu on my Mac?</button>
+          </div>
+        </div>
+      </main>
+      <footer class="composer">
+        <div class="composer-box">
+          <textarea id="input" rows="1" placeholder="Ask anything…" autocomplete="off" spellcheck="true"></textarea>
+          <button id="btn-mic" class="btn btn-ghost btn-icon btn-round hidden" type="button" title="Dictate (⌃⌥D)" aria-label="Dictate"><i data-icon="mic"></i></button>
+          <button id="btn-send" class="btn btn-primary btn-icon btn-round" type="button" title="Send" aria-label="Send"><i data-icon="arrow-up"></i></button>
+        </div>
+      </footer>
+    </section>
+
+    <section id="view-audit" class="view hidden" aria-label="Audit log">
+      <div class="toolbar">
+        <input id="audit-filter" type="search" placeholder="Filter by tool, step, text…" autocomplete="off">
+        <select id="audit-event" aria-label="Event type">
+          <option value="">all events</option>
+          <option value="tool.call">tool.call</option>
+          <option value="tool.error">tool.error</option>
+          <option value="approval">approval</option>
+          <option value="policy.refuse">policy.refuse</option>
+          <option value="quarantine">quarantine</option>
+          <option value="quarantine.error">quarantine.error</option>
+          <option value="step.skip">step.skip</option>
+          <option value="plan.start">plan.start</option>
+          <option value="plan.end">plan.end</option>
+        </select>
+        <button id="audit-refresh" class="btn btn-ghost" type="button">Refresh</button>
+      </div>
+      <div id="audit-body" class="panel-body"></div>
+    </section>
+
+    <section id="view-settings" class="view hidden" aria-label="Settings">
+      <div id="settings-body" class="panel-body"></div>
+    </section>
+  </div>
+</div>
+
+<div id="more" class="popover hidden" role="dialog" aria-label="More">
+  <div class="popover-head"><span>Menu</span><button class="btn btn-ghost btn-icon btn-close" type="button" data-close="more" aria-label="Close"><i data-icon="x"></i></button></div>
+  <div class="popover-body">
+    <h3>Previous chats</h3>
+    <ul id="more-chats" class="list"></ul>
+    <h3>Saved actions</h3>
+    <ul id="more-actions" class="list"></ul>
+  </div>
+  <div class="menu-items">
+    <button class="menu-item" type="button" data-new-mode="isolated"><i data-icon="shield"></i>New isolated chat</button>
+    <button class="menu-item" type="button" data-new-mode="incognito"><i data-icon="eye-off"></i>New incognito chat</button>
+    <button id="more-audit" class="menu-item" type="button"><i data-icon="scroll-text"></i>Audit log</button>
+    <button id="more-pause" class="menu-item" type="button"><i data-icon="pause"></i><span class="lbl">Standby</span></button>
+  </div>
+</div>
+
+<div id="token-screen" class="overlay hidden">
+  <div class="card card-center">
+    <h2>No session token</h2>
+    <p id="token-msg">This page needs the token the core wrote to <code>~/.personal_agent/session.token</code>.</p>
+    <form id="token-form" class="token-form">
+      <input id="token-input" type="password" placeholder="paste token" autocomplete="off">
+      <button class="btn btn-primary" type="submit">Use token</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status"></div>
+<script src="/app.js"></script>
+</body>
+</html>

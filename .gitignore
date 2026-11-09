@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# macOS app build output and compiled helpers (built by scripts/build_mac_app.sh)
+macos/.build/
+macos/build/
+bin/
+.DS_Store
+
+# Generated per machine (absolute paths)
+bridge/run_host.sh
+
+# Local-only: editor/tool settings, model benchmark results, unrelated work files
+.idea/
+.vscode/
+.claude/
+eval/results.jsonl
+stage-api-fix/
+
+# Never commit runtime data or secrets (they live in ~/.personal_agent, but just in case)
+*.token
+session.json
+secrets.json
+memory.enc
+conversations/
+audit.jsonl
+*.pem

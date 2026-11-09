@@ -1,0 +1,168 @@
+# Data-flow policy. Enforced in Python; the models cannot change it.
+#
+# allow_sources lists which provenance tags may reach a tool, as arguments OR as control flow
+# (a `when` condition or a `foreach` over that data). Tags:
+#   user, planner         trusted (literals the planner wrote; user input)
+#   gmail.list, gmail.get body/headers read from email              (untrusted)
+#   browser               page text                                 (untrusted)
+#   fs.read, fs.list      file contents / listings                  (untrusted)
+#   shell.run             command output                            (untrusted)
+#   quarantine            a typed verdict derived from untrusted content
+#   "*"                   anything
+
+max_steps: 200
+
+tools:
+  show:
+    description: display to user
+    allow_sources: ["*"]
+    approval: false
+
+  # The owner picks from options; options may come from anywhere (they are only shown). What the owner
+  # picks is tagged `user`, so it may become a click target.
+  ask.choose:
+    allow_sources: ["*"]
+    approval: false
+
+  fs.list:   {allow_sources: [user, planner, fs.list],                       approval: false}
+  fs.read:   {allow_sources: [user, planner, fs.list],                       approval: false}
+  fs.write:  {allow_sources: [user, planner],                                approval: true, risk: high}
+  # A listing (or a reader verdict about a file) may decide WHICH file goes to the Trash.
+  fs.move_to_trash: {allow_sources: [user, planner, fs.list, fs.read, quarantine], approval: true}
+
+  app.open:  {allow_sources: [user, planner],                                approval: false}
+  # Read-only facts about this Mac computed by our own code; their summaries are plain text.
+  system.memory:   {allow_sources: [user, planner], approval: false}
+  system.disk:     {allow_sources: [user, planner], approval: false}
+  system.battery:  {allow_sources: [user, planner], approval: false}
+  system.top_apps: {allow_sources: [user, planner], approval: false}
+  system.keyboards:       {allow_sources: [user, planner], approval: false}
+  system.add_keyboard:    {allow_sources: [user, planner], approval: true}    # changes a setting (easy to undo)
+  system.remove_keyboard: {allow_sources: [user, planner], approval: true}
+
+  # Desktop control (any app, through macOS Accessibility). Reading is free; acting always asks, and
+  # the target/text must come from the owner or the planner (or a list the owner picked from).
+  desktop.apps:     {allow_sources: [user, planner], approval: false}
+  desktop.controls: {allow_sources: [user, planner], approval: false}
+  desktop.read:     {allow_sources: [user, planner], approval: false}
+  desktop.press:    {allow_sources: [user, planner], approval: true, risk: high}
+  desktop.type:     {allow_sources: [user, planner], approval: true, risk: high}
+  desktop.key:      {allow_sources: [user, planner], approval: true, risk: high}
+  setup.chrome_extension: {allow_sources: [user, planner], approval: true}   # only ./extension, nothing else
+
+  shell.run: {allow_sources: [user, planner],                                approval: true}   # read-only programs only (shell.allowed_programs)
+
+  gmail.list:  {allow_sources: [user, planner],                              approval: false}
+  gmail.get:   {allow_sources: [user, planner, gmail.list],                  approval: false}
+  # A verdict from the reader (tagged quarantine + gmail.*) may decide WHICH email to trash,
+  # but nothing from email may reach send/shell/browser/fs.write.
+  gmail.trash: {allow_sources: [user, planner, gmail.list, gmail.get, quarantine], approval: true}
+  # Labelling, archiving and marking read are reversible; a reader verdict may pick which email.
+  gmail.label:     {allow_sources: [user, planner, gmail.list, gmail.get, quarantine], approval: false}
+  gmail.archive:   {allow_sources: [user, planner, gmail.list, gmail.get, quarantine], approval: false}
+  gmail.mark_read: {allow_sources: [user, planner, gmail.list, gmail.get, quarantine], approval: false}
+  gmail.send:  {allow_sources: [user, planner],                              approval: true, risk: high}
+
+  browser.open:  {allow_sources: [user, planner],                            approval: new_domain}
+  browser.read:  {allow_sources: [user, planner],                            approval: false}
+  browser.click: {allow_sources: [user, planner],                            approval: true, risk: high}
+  browser.type:  {allow_sources: [user, planner],                            approval: true, risk: high}
+  browser.screenshot: {allow_sources: [user, planner],                       approval: false}
+  browser.list:  {allow_sources: [user, planner],                            approval: false}
+  browser.controls: {allow_sources: [user, planner],                         approval: false}
+
+# Models. The fast one does everyday work. The careful one is started only when code decides a task
+# needs it (open-ended request, a high-risk tool, a plan outside the task's scope, or an invalid first
+# plan), and only if `min_free_gb` of memory is free; otherwise the agent says memory is low.
+# One model in memory at a time.
+models:
+  fast: qwen3.5:4b
+  watcher: false            # second check on each changing action; switch on in the menu or settings
+  strong:
+    backend: turbofieldfare
+    binary: ~/repos/turbo-fieldfare/.build/release/TurboFieldfareServer
+    model_dir: ~/repos/turbo-fieldfare/scratch/gemma4.gturbo
+    port: 8080
+    max_context: 8192
+    min_free_gb: 4
+
+# Auto-standby: if the Mac runs low on memory, the agent stops the current task, unloads its models
+# and waits for the owner to press Resume.
+memory:
+  standby_at_percent: 92      # memory in use (macOS memory_pressure)
+  min_swap_free_gb: 0.5       # or no room left to grow swap (swap file space + disk above 10 GB)
+  check_every_s: 5
+  auto_lock_minutes: 15            # encrypted memory locks itself after this long unused
+  incognito_delete_after_minutes: 60   # incognito chats are deleted for good after this long idle
+
+# Where data goes. Prompts and content reach only the local Ollama; there is no cloud model path.
+# The services the agent itself uses on your behalf are listed here so they are visible in settings;
+# switching one off removes its tools, so the planner never sees them.
+network:
+  ollama_url: "http://127.0.0.1:11434"
+  allow_remote_ollama: false          # a non-loopback ollama_url (or OLLAMA_URL) is refused unless true
+  gmail:
+    enabled: true                     # IMAP/SMTP engine for mail; false removes the gmail.* tools
+    imap_host: imap.gmail.com
+    smtp_host: smtp.gmail.com
+
+filesystem:
+  # The whole home folder, read and write (writes ask for approval and keep a backup of any file they
+  # overwrite). The deny list applies inside any root and symlinks are resolved before it is checked.
+  readable_roots: ["~"]
+  writable_roots: ["~"]
+  denied_paths:
+    - "~/Library"            # keychains, cookies, app data, Mail/Messages/Safari stores
+    - "~/.personal_agent"    # this agent's own token, secrets, audit log, browser profile
+    - "~/.ssh"
+    - "~/.gnupg"
+    - "~/.aws"
+    - "~/.config"
+    - "~/.docker"
+    - "~/.kube"
+    - "~/.netrc"
+  denied_globs: ["*.pem", "*.key", "*.p12", "*.keychain*", ".env", ".env.*", "id_rsa*", "id_ed25519*", "*token*.json", "*/.git/*"]
+
+desktop:
+  enabled: true
+  # Never controlled, whatever the plan says: terminals (would bypass the shell allowlist), password
+  # managers and keychains, security settings, and this agent itself (it must never approve its own steps).
+  blocked_apps:
+    - com.personal-agent.shell
+    - Rozan
+    - Personal Agent
+    - Terminal
+    - com.apple.Terminal
+    - iTerm2
+    - com.googlecode.iterm2
+    - Warp
+    - Ghostty
+    - Keychain Access
+    - Passwords
+    - com.apple.Passwords
+    - 1Password
+    - com.1password
+    - Bitwarden
+    - System Settings
+    - com.apple.systempreferences
+    - com.apple.SecurityAgent
+
+browser:
+  # The owner's real Google Chrome. The first visit to each new website asks; these are never opened.
+  enabled: true
+  blocked_hosts:
+    - paypal.com
+    - stripe.com
+    - 1password.com
+    - bitwarden.com
+    - lastpass.com
+    - myaccount.google.com      # Google security settings
+    - appleid.apple.com
+  profile_dir: "~/.personal_agent/browser-profile"   # unused since the switch to Chrome
+
+shell:
+  cwd: "~"
+  timeout_s: 60
+  # Read-only programs only. Anything that changes the system needs its own narrow tool.
+  allowed_programs: [df, du, ls, uptime, sw_vers, pmset, date, whoami, ps, mdfind, file, wc, stat, system_profiler, sysctl, vm_stat]
+  denied_patterns: ["rm -rf", "sudo", "curl", "wget", "mkfs", "dd if=", "chmod 777", "> /dev/", "ssh ", "scp "]

@@ -1,0 +1,13 @@
+{
+  "goal": "Trash marketing emails older than 60 days (asks before each trash)",
+  "steps": [
+    {"id": "old", "tool": "gmail.list", "args": {"query": "older_than:60d category:promotions", "limit": 20}},
+    {"id": "loop", "foreach": {"$ref": "old"}, "as": "m", "steps": [
+      {"id": "full", "tool": "gmail.get", "args": {"id": {"$ref": "m.id"}}},
+      {"id": "v", "quarantine": {"input": {"$ref": "full.body"}, "schema": "EmailTriage",
+                                 "question": "Is this a marketing or newsletter email that is safe to delete?"}},
+      {"id": "t", "tool": "gmail.trash", "args": {"id": {"$ref": "m.id"}}, "when": {"$ref": "v.should_delete"}},
+      {"id": "s", "tool": "show", "args": {"text": {"$ref": "m.subject"}}, "when": {"$ref": "v.should_delete"}}
+    ]}
+  ]
+}
