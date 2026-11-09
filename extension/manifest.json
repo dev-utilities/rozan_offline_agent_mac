@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Rozan Bridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Lets your local Rozan open, read and (with your approval) click in Chrome. Talks only to the agent on this Mac.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvDy+QZS1bo3PJ0d0GbjAJSmX4FUIakqq6bFVTcye1yUC2WUdMmVxSekgdVCAcLKod2mFdIidpWMyiE6ZL8jtMChJYpV11FnlJeNKmbsbDym5rcOiByecy8yDKaGzdgvaooDK5mjoG4H6bEQ4XRphuBSPZwHNF85NEjRSNRU0LReaWqQew0zBoymXTdvobQ+JfLHPfMS58A/9zNaLTIN1IN/bS4+BfWATf8mfBUOEBV2+EtFK1Jsk3kD2yi+8KKCAksT299YEUWcPqnySXE8TNGJSXBVBtkG5pIKta7QFcLGib1xi27ciahflqd416W0mkW0RjsJTlEX7N8Rvw+0B+wIDAQAB",
   "background": {

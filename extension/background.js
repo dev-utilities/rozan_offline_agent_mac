@@ -14,8 +14,10 @@ function connect() {
     return;
   }
   port.onMessage.addListener(onMessage);
-  port.onDisconnect.addListener(() => { port = null; });
-  identity().then((who) => port && port.postMessage(who));
+  // Reading lastError marks it handled; otherwise Chrome lists "Native host has exited" under Errors every time
+  // Rozan is closed or restarts. The alarm below simply tries again later.
+  port.onDisconnect.addListener(() => { void chrome.runtime.lastError; port = null; });
+  identity().then((who) => port && port.postMessage(who)).catch(() => {});
 }
 
 // Each browser profile running this extension has its own instance id, so the agent can tell
