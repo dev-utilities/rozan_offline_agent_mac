@@ -88,6 +88,11 @@ desktop guard rails, Playwright UI). Requirement status per item: `REQUIREMENTS.
   Rozan's core and Ollama named) into `/status.standby_info` and the banner; the app shows Resume / Stay on Standby /
   Open Activity Monitor. Verified live 2026-11-09.
 
+TODO (owner, 2026-11-09): publish Rozan Bridge on the Chrome Web Store ($5 developer registration, unlisted is fine):
+store zip without the `key` field, listing text + screenshots, privacy policy page (collects nothing, talks only to Rozan
+on this Mac), add the store-assigned extension id to `allowed_origins` in `scripts/install_chrome_bridge.py`, and make
+`setup.chrome_extension` open the store page instead of Developer mode → Load unpacked.
+
 Not done yet: model comparison of qwen3.5:9b / gemma4:12b
 (the guard aborted it: ~14 GB already in swap; reboot first); connectors (section 5 C2); Touch ID unlock; daily log
 reviewer; saved-action authoring from the UI.
